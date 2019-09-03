@@ -77,10 +77,8 @@ func checkAgents() {
 				break
 			}
 			total++
-			if len(record) >= 4 {
-				if strings.HasPrefix(record[3], "Active") {
-					active++
-				}
+			if len(record) >= 4 && strings.HasPrefix(record[3], "Active") {
+				active++
 			}
 		}
 
