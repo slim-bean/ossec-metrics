@@ -69,13 +69,13 @@ func checkAgents() {
 		active := 0
 		for {
 			record, err := r.Read()
-			if err == io.EOF {
-				break
-			}
 			if err != nil {
-				log.Println(err)
+				if err != io.EOF {
+					log.Println(err)
+				}
 				break
 			}
+
 			total++
 			if len(record) >= 4 && strings.HasPrefix(record[3], "Active") {
 				active++
