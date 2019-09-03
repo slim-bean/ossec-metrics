@@ -53,39 +53,35 @@ func checkAgents() {
 	var out bytes.Buffer
 
 	for {
-		select {
-		case <-t.C:
-			cmd := exec.Command("/var/ossec/bin/agent_control", "-ls")
-			cmd.Stdout = &out
-			err := cmd.Run()
+		<-t.C
+		cmd := exec.Command("/var/ossec/bin/agent_control", "-ls")
+		cmd.Stdout = &out
+		err := cmd.Run()
+		if err != nil {
+			log.Println(err)
+		}
+		r := csv.NewReader(strings.NewReader(out.String()))
+		total := 0
+		active := 0
+		for {
+			record, err := r.Read()
+			if err == io.EOF {
+				break
+			}
 			if err != nil {
 				log.Println(err)
+				break
 			}
-			r := csv.NewReader(strings.NewReader(out.String()))
-			total := 0
-			active := 0
-			for {
-				record, err := r.Read()
-				if err == io.EOF {
-					break
-				}
-				if err != nil {
-					log.Println(err)
-					break
-				}
-				total++
-				if len(record) >= 4 {
-					if strings.HasPrefix(record[3], "Active") {
-						active++
-					}
+			total++
+			if len(record) >= 4 {
+				if strings.HasPrefix(record[3], "Active") {
+					active++
 				}
 			}
-			agentsTotal.Set(float64(total))
-			agentsActive.Set(float64(active))
-			fmt.Printf("Found %d active out of %d total agents\n", active, total)
-			out.Reset()
-
 		}
+		agentsTotal.Set(float64(total))
+		agentsActive.Set(float64(active))
+		fmt.Printf("Found %d active out of %d total agents\n", active, total)
+		out.Reset()
 	}
-
 }
