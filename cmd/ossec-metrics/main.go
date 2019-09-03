@@ -59,6 +59,7 @@ func checkAgents() {
 		err := cmd.Run()
 		if err != nil {
 			log.Println(err)
+			continue
 		}
 		r := csv.NewReader(strings.NewReader(out.String()))
 		total := 0
