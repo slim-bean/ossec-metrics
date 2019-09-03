@@ -30,15 +30,13 @@ var (
 	})
 )
 
-func init() {
+func main() {
 	// Register the summary and the histogram with Prometheus's default registry.
 	prometheus.MustRegister(agentsTotal)
 	prometheus.MustRegister(agentsActive)
 	// Add Go module build info.
 	prometheus.MustRegister(prometheus.NewBuildInfoCollector())
-}
 
-func main() {
 	flag.Parse()
 	http.Handle("/metrics", promhttp.Handler())
 
