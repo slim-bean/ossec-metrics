@@ -15,21 +15,19 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-var (
-	addr        = flag.String("listen-address", ":7070", "The address to listen on for HTTP requests.")
-	agentsTotal = prometheus.NewGauge(prometheus.GaugeOpts{
+func main() {
+	agentsTotal := prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: "ossec_metrics",
 		Name:      "total_agents",
 		Help:      "total number of agents.",
 	})
-	agentsActive = prometheus.NewGauge(prometheus.GaugeOpts{
+
+	agentsActive := prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: "ossec_metrics",
 		Name:      "active_agents",
 		Help:      "total number of active agents.",
 	})
-)
 
-func main() {
 	// Register the summary and the histogram with Prometheus's default registry.
 	prometheus.MustRegister(agentsTotal)
 	prometheus.MustRegister(agentsActive)
@@ -37,15 +35,16 @@ func main() {
 	// Add Go module build info.
 	prometheus.MustRegister(prometheus.NewBuildInfoCollector())
 
+	addr := flag.String("listen-address", ":7070", "The address to listen on for HTTP requests.")
 	flag.Parse()
+
+	go checkAgents(agentsTotal, agentsActive)
+
 	http.Handle("/metrics", promhttp.Handler())
-
-	go checkAgents()
-
 	log.Fatal(http.ListenAndServe(*addr, nil))
 }
 
-func checkAgents() {
+func checkAgents(agentsTotal prometheus.Gauge, agentsActive prometheus.Gauge) {
 	t := time.NewTicker(20 * time.Second)
 	defer t.Stop()
 
