@@ -33,6 +33,7 @@ func main() {
 	// Register the summary and the histogram with Prometheus's default registry.
 	prometheus.MustRegister(agentsTotal)
 	prometheus.MustRegister(agentsActive)
+
 	// Add Go module build info.
 	prometheus.MustRegister(prometheus.NewBuildInfoCollector())
 
@@ -45,12 +46,12 @@ func main() {
 }
 
 func checkAgents() {
-
 	t := time.NewTicker(20 * time.Second)
 	defer t.Stop()
 
 	for {
 		<-t.C
+
 		cmd := exec.Command("/var/ossec/bin/agent_control", "-ls")
 		out, err := cmd.StdoutPipe()
 
@@ -77,7 +78,7 @@ func checkAgents() {
 			}
 
 			total++
-			if len(record) >= 4 && strings.HasPrefix(record[3], "Active") {
+			if len(record) > 3 && strings.HasPrefix(record[3], "Active") {
 				active++
 			}
 		}
