@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/csv"
 	"flag"
 	"fmt"
@@ -50,18 +49,22 @@ func checkAgents() {
 	t := time.NewTicker(20 * time.Second)
 	defer t.Stop()
 
-	var out bytes.Buffer
-
 	for {
 		<-t.C
 		cmd := exec.Command("/var/ossec/bin/agent_control", "-ls")
-		cmd.Stdout = &out
-		err := cmd.Run()
+		out, err := cmd.StdoutPipe()
+
 		if err != nil {
+			log.Printf("could not get command output: %v", err)
+			continue
+		}
+
+		if err := cmd.Start(); err != nil {
 			log.Println(err)
 			continue
 		}
-		r := csv.NewReader(strings.NewReader(out.String()))
+
+		r := csv.NewReader(out)
 		total := 0
 		active := 0
 		for {
@@ -80,9 +83,14 @@ func checkAgents() {
 				}
 			}
 		}
+
+		if err := cmd.Wait(); err != nil {
+			log.Printf("waiting for command to complete failed: %v", err)
+			continue
+		}
+
 		agentsTotal.Set(float64(total))
 		agentsActive.Set(float64(active))
 		fmt.Printf("Found %d active out of %d total agents\n", active, total)
-		out.Reset()
 	}
 }
